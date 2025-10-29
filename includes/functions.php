@@ -9,10 +9,17 @@ if (!function_exists('sanitize_input')) {
 }
 
 if (!function_exists('generate_csrf_token')) {
-    function generate_csrf_token(): string
+    function generate_csrf_token(int $ttlSeconds = 900, bool $forceRefresh = false): string
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
+        }
+
+        $existingToken = $_SESSION['csrf_token'] ?? null;
+        $issuedAt = $_SESSION['csrf_token_time'] ?? 0;
+
+        if (!$forceRefresh && is_string($existingToken) && $issuedAt && (time() - (int) $issuedAt) <= $ttlSeconds) {
+            return $existingToken;
         }
 
         $token = bin2hex(random_bytes(32));
