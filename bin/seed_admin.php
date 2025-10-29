@@ -19,18 +19,27 @@ $adminEmail = 'admin@coresuite.it';
 $existsStmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
 $existsStmt->execute([':email' => $adminEmail]);
 
-if ($existsStmt->fetch()) {
-    echo "Admin user already exists ({$adminEmail}).\n";
+$passwordHash = password_hash('admin', PASSWORD_DEFAULT);
+
+$row = $existsStmt->fetch();
+
+if ($row) {
+    $update = $pdo->prepare('UPDATE users SET nome = :nome, password = :password, ruolo = :ruolo WHERE id = :id');
+    $update->execute([
+        ':nome' => 'admin',
+        ':password' => $passwordHash,
+        ':ruolo' => 'Admin',
+        ':id' => $row['id'],
+    ]);
+    echo "Admin user updated successfully.\n";
     exit(0);
 }
-
-$passwordHash = password_hash('Admin123!', PASSWORD_DEFAULT);
 
 $insert = $pdo->prepare('INSERT INTO users (nome, email, password, ruolo, telefono, indirizzo, iban, foto)
     VALUES (:nome, :email, :password, :ruolo, :telefono, :indirizzo, :iban, :foto)');
 
 $insert->execute([
-    ':nome' => 'Admin Coresuite',
+    ':nome' => 'admin',
     ':email' => $adminEmail,
     ':password' => $passwordHash,
     ':ruolo' => 'Admin',

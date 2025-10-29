@@ -10,23 +10,32 @@ require_once dirname(__DIR__) . '/includes/functions.php';
 require_once dirname(__DIR__) . '/includes/db.php';
 
 $adminEmail = 'admin@coresuite.it';
-$passwordPlain = 'Admin123!';
+$passwordPlain = 'admin';
 $message = '';
 
 try {
     $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
     $stmt->execute([':email' => $adminEmail]);
 
-    if ($stmt->fetch()) {
-        $message = 'Admin user already exists (' . htmlspecialchars($adminEmail, ENT_QUOTES, 'UTF-8') . ').';
-    } else {
-        $passwordHash = password_hash($passwordPlain, PASSWORD_DEFAULT);
+    $row = $stmt->fetch();
 
+    $passwordHash = password_hash($passwordPlain, PASSWORD_DEFAULT);
+
+    if ($row) {
+        $update = $pdo->prepare('UPDATE users SET nome = :nome, password = :password, ruolo = :ruolo WHERE id = :id');
+        $update->execute([
+            ':nome' => 'admin',
+            ':password' => $passwordHash,
+            ':ruolo' => 'Admin',
+            ':id' => $row['id'],
+        ]);
+        $message = 'Admin user updated successfully (' . htmlspecialchars($adminEmail, ENT_QUOTES, 'UTF-8') . ').';
+    } else {
         $insert = $pdo->prepare('INSERT INTO users (nome, email, password, ruolo, telefono, indirizzo, iban, foto)
             VALUES (:nome, :email, :password, :ruolo, :telefono, :indirizzo, :iban, :foto)');
 
         $insert->execute([
-            ':nome' => 'Admin Coresuite',
+            ':nome' => 'admin',
             ':email' => $adminEmail,
             ':password' => $passwordHash,
             ':ruolo' => 'Admin',

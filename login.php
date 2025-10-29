@@ -3,33 +3,45 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 $error = null;
 $failureReason = null;
 $debugMode = filter_var(getenv('APP_DEBUG'), FILTER_VALIDATE_BOOLEAN);
 
 if (!function_exists('log_login_failure')) {
-    function log_login_failure(?string $reason, string $email): void
+    function log_login_failure(?string $reason, string $identifier): void
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-        $message = sprintf('Login failed (%s) for %s from %s | UA: %s', $reason ?? 'unknown', $email, $ip, $userAgent);
+        $message = sprintf('Login failed (%s) for %s from %s | UA: %s', $reason ?? 'unknown', $identifier, $ip, $userAgent);
         error_log($message);
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = sanitize_input($_POST['email'] ?? '');
+    $identifier = strtolower(sanitize_input($_POST['username'] ?? ''));
 
     if (!validate_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sessione scaduta. Riprova.';
         $failureReason = 'csrf_invalid';
-        log_login_failure($failureReason, $email);
+        if ($debugMode) {
+            error_log(sprintf(
+                'CSRF debug: stored=%s, posted=%s, issued_at=%s, now=%s',
+                $_SESSION['csrf_token'] ?? 'missing',
+                $_POST['csrf_token'] ?? 'missing',
+                $_SESSION['csrf_token_time'] ?? 'missing',
+                time()
+            ));
+        }
+        log_login_failure($failureReason, $identifier);
     } else {
         $password = $_POST['password'] ?? '';
 
         try {
-            $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
-            $stmt->execute([':email' => $email]);
+            $stmt = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = :identifier OR LOWER(nome) = :identifier LIMIT 1');
+            $stmt->execute([':identifier' => $identifier]);
             $user = $stmt->fetch();
 
             if (!$user) {
@@ -52,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Servizio temporaneamente non disponibile. Riprova più tardi.';
         }
 
-        log_login_failure($failureReason, $email);
+        log_login_failure($failureReason, $identifier);
     }
 }
 
@@ -84,12 +96,12 @@ if ($error && $debugMode && $failureReason) {
         <form method="POST" class="space-y-4">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="space-y-2">
-                <label for="email" class="text-sm font-medium">Email</label>
-                <input type="email" id="email" name="email" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-yellow-200">
+                <label for="username" class="text-sm font-medium">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-yellow-200">
             </div>
             <div class="space-y-2">
                 <label for="password" class="text-sm font-medium">Password</label>
-                <input type="password" id="password" name="password" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-yellow-200">
+                <input type="password" id="password" name="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-yellow-200">
             </div>
             <div class="flex items-center justify-between text-sm">
                 <label class="inline-flex items-center gap-2">
