@@ -38,6 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_login_failure($failureReason, $identifier);
     } else {
         $password = $_POST['password'] ?? '';
+        if (!is_string($password)) {
+            $password = '';
+        }
+        $password = trim($password);
 
         try {
             $stmt = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = :email_identifier OR LOWER(nome) = :nome_identifier LIMIT 1');
