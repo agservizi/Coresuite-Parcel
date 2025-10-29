@@ -560,6 +560,10 @@ html {
        text-size-adjust: 100%;
 }
 
+.static {
+  position: static;
+}
+
 .absolute {
   position: absolute;
 }
@@ -623,6 +627,10 @@ html {
 
 .mt-6 {
   margin-top: 1.5rem;
+}
+
+.inline {
+  display: inline;
 }
 
 .flex {

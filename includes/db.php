@@ -15,6 +15,11 @@ if (is_readable($envFile)) {
             continue;
         }
 
+        // Remove inline comments not wrapped in quotes.
+        if ($value !== '' && $value[0] !== '"' && $value[0] !== "'") {
+            $value = preg_replace('/\s*[#;].*$/', '', $value) ?? $value;
+        }
+
         $value = trim($value, "\"' ");
 
         if (getenv($key) === false) {
@@ -30,11 +35,20 @@ $DB_NAME = getenv('DB_NAME');
 $DB_USER = getenv('DB_USER');
 $DB_PASSWORD = getenv('DB_PASSWORD');
 $DB_CHARSET = getenv('DB_CHARSET') ?: 'utf8mb4';
+$debugMode = filter_var(getenv('APP_DEBUG'), FILTER_VALIDATE_BOOLEAN);
 
-if (!$DB_HOST || !$DB_NAME || !$DB_USER) {
-    error_log('Missing database configuration. Please set DB_HOST, DB_NAME, and DB_USER in the .env file.');
+$missingKeys = array_filter([
+    'DB_HOST' => $DB_HOST,
+    'DB_NAME' => $DB_NAME,
+    'DB_USER' => $DB_USER,
+], static fn ($value): bool => $value === null || $value === '');
+
+if ($missingKeys) {
+    $missingList = implode(', ', array_keys($missingKeys));
+    $message = 'Missing database configuration keys: ' . $missingList;
+    error_log($message);
     http_response_code(500);
-    exit('Database configuration error.');
+    exit($debugMode ? $message : 'Database configuration error.');
 }
 
 try {
@@ -45,7 +59,8 @@ try {
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
 } catch (PDOException $e) {
-    error_log('Database connection failed: ' . $e->getMessage());
+    $errorMessage = 'Database connection failed: ' . $e->getMessage();
+    error_log($errorMessage);
     http_response_code(500);
-    exit('Database connection error.');
+    exit($debugMode ? $errorMessage : 'Database connection error.');
 }
