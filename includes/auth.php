@@ -2,22 +2,43 @@
 // Authentication helpers for login status, role checking, and session management.
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    $sessionPath = dirname(__DIR__) . '/storage/sessions';
+    $projectPath = dirname(__DIR__) . '/storage/sessions';
+    $tempPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'coresuite_sessions';
+    $paths = [$projectPath, $tempPath];
+    $sessionPathSet = false;
 
-    if (!is_dir($sessionPath)) {
-        if (!mkdir($sessionPath, 0775, true) && !is_dir($sessionPath)) {
-            error_log('Unable to create session directory at ' . $sessionPath);
+    foreach ($paths as $path) {
+        if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
+            error_log('Unable to create session directory at ' . $path);
+            continue;
         }
+
+        if (is_writable($path)) {
+            session_save_path($path);
+            $sessionPathSet = true;
+            break;
+        }
+
+        error_log('Session directory is not writable: ' . $path);
     }
 
-    if (is_dir($sessionPath) && is_writable($sessionPath)) {
-        session_save_path($sessionPath);
-    } else {
-        error_log('Session directory is not writable: ' . $sessionPath);
+    if (!$sessionPathSet) {
+        error_log('Falling back to default session save path');
     }
+
+    $isSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
 
     session_name('coresuite_session');
-    session_start();
+    if (!session_start()) {
+        error_log('Failed to start session');
+    }
 }
 
 const SESSION_TIMEOUT_SECONDS = 1800;
