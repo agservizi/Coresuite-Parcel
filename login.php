@@ -4,29 +4,62 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
 $error = null;
+$failureReason = null;
+$debugMode = filter_var(getenv('APP_DEBUG'), FILTER_VALIDATE_BOOLEAN);
+
+if (!function_exists('log_login_failure')) {
+    function log_login_failure(?string $reason, string $email): void
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        $message = sprintf('Login failed (%s) for %s from %s | UA: %s', $reason ?? 'unknown', $email, $ip, $userAgent);
+        error_log($message);
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = sanitize_input($_POST['email'] ?? '');
+
     if (!validate_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sessione scaduta. Riprova.';
+        $failureReason = 'csrf_invalid';
+        log_login_failure($failureReason, $email);
     } else {
-        $email = sanitize_input($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
-        $stmt->execute([':email' => $email]);
-        $user = $stmt->fetch();
+        try {
+            $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
+            $stmt->execute([':email' => $email]);
+            $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password'])) {
-            login_user($user);
-            header('Location: dashboard.php');
-            exit;
+            if (!$user) {
+                $failureReason = 'user_not_found';
+            } elseif (!password_verify($password, $user['password'])) {
+                $failureReason = 'password_mismatch';
+            } else {
+                login_user($user);
+                header('Location: dashboard.php');
+                exit;
+            }
+        } catch (Throwable $exception) {
+            $failureReason = 'db_error';
+            error_log('Login query error: ' . $exception->getMessage());
         }
 
-        $error = 'Credenziali non valide.';
+        if ($failureReason !== 'db_error') {
+            $error = 'Credenziali non valide.';
+        } else {
+            $error = 'Servizio temporaneamente non disponibile. Riprova più tardi.';
+        }
+
+        log_login_failure($failureReason, $email);
     }
 }
 
 $csrfToken = generate_csrf_token();
+if ($error && $debugMode && $failureReason) {
+    $error .= ' [' . $failureReason . ']';
+}
 ?>
 <!DOCTYPE html>
 <html lang="it" class="h-full">
