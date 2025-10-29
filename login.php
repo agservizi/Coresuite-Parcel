@@ -40,8 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = $_POST['password'] ?? '';
 
         try {
-            $stmt = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = :identifier OR LOWER(nome) = :identifier LIMIT 1');
-            $stmt->execute([':identifier' => $identifier]);
+            $stmt = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = :email_identifier OR LOWER(nome) = :nome_identifier LIMIT 1');
+            $stmt->execute([
+                ':email_identifier' => $identifier,
+                ':nome_identifier' => $identifier,
+            ]);
             $user = $stmt->fetch();
 
             if (!$user) {
