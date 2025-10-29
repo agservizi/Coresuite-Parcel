@@ -3,14 +3,24 @@
 
 $envFile = dirname(__DIR__) . '/.env';
 if (is_readable($envFile)) {
-    $envValues = parse_ini_file($envFile, false, INI_SCANNER_RAW);
-    if (is_array($envValues)) {
-        foreach ($envValues as $key => $value) {
-            if ($value !== false && getenv($key) === false) {
-                putenv($key . '=' . $value);
-                $_ENV[$key] = $value;
-                $_SERVER[$key] = $value;
-            }
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#' || $line[0] === ';') {
+            continue;
+        }
+
+        [$key, $value] = array_map('trim', explode('=', $line, 2) + [1 => '']);
+        if ($key === '') {
+            continue;
+        }
+
+        $value = trim($value, "\"' ");
+
+        if (getenv($key) === false) {
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
         }
     }
 }
