@@ -3,4 +3,6 @@ vendor/
 pdf/*.pdf
 uploads/*
 !.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
 .env

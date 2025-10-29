@@ -2,6 +2,21 @@
 // Authentication helpers for login status, role checking, and session management.
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    $sessionPath = dirname(__DIR__) . '/storage/sessions';
+
+    if (!is_dir($sessionPath)) {
+        if (!mkdir($sessionPath, 0775, true) && !is_dir($sessionPath)) {
+            error_log('Unable to create session directory at ' . $sessionPath);
+        }
+    }
+
+    if (is_dir($sessionPath) && is_writable($sessionPath)) {
+        session_save_path($sessionPath);
+    } else {
+        error_log('Session directory is not writable: ' . $sessionPath);
+    }
+
+    session_name('coresuite_session');
     session_start();
 }
 
