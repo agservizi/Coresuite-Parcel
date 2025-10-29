@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/ui.php';
 require_once __DIR__ . '/modules/shipments.php';
 require_once __DIR__ . '/modules/pickup.php';
 require_once __DIR__ . '/modules/invoices.php';
@@ -36,39 +37,9 @@ if ($role === 'Cliente' && current_user_id()) {
 </head>
 <body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
     <div class="min-h-screen flex">
-        <aside class="hidden md:flex md:w-64 lg:w-72 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-            <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-full bg-[var(--coresuite-primary)] flex items-center justify-center font-bold text-slate-900">CP</div>
-                    <div>
-                        <p class="text-lg font-semibold">Coresuite Parcel</p>
-                        <p class="text-xs text-slate-500"><?php echo htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8'); ?></p>
-                    </div>
-                </div>
-            </div>
-            <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 bg-slate-100 dark:bg-slate-800">Dashboard</a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Spedizioni</a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Ritiri</a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Ticket</a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Fatture</a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">Impostazioni</a>
-            </nav>
-            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 text-sm">
-                <a href="logout.php" class="text-slate-500 hover:text-slate-700">Logout</a>
-            </div>
-        </aside>
-
+        <?php render_sidebar('dashboard'); ?>
         <div class="flex-1 flex flex-col">
-            <header class="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800">
-                <div class="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-semibold">Dashboard</h1>
-                        <p class="text-sm text-slate-500">Panoramica operativa</p>
-                    </div>
-                    <button type="button" data-theme-toggle class="btn-primary">Tema</button>
-                </div>
-            </header>
+            <?php render_topbar('Dashboard', 'Panoramica operativa'); ?>
 
             <main class="flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 <section>
@@ -99,7 +70,7 @@ if ($role === 'Cliente' && current_user_id()) {
                                 <h2 class="text-lg font-semibold">Ultime spedizioni</h2>
                                 <p class="text-sm text-slate-500">Monitoraggio stato in tempo reale</p>
                             </div>
-                            <a href="#" class="text-sm text-slate-500 hover:text-slate-700">Vedi tutte</a>
+                            <a href="spedizioni.php" class="text-sm text-slate-500 hover:text-slate-700">Vedi tutte</a>
                         </div>
                         <div class="mt-4 overflow-x-auto">
                             <table class="min-w-full text-sm">
@@ -158,7 +129,7 @@ if ($role === 'Cliente' && current_user_id()) {
                                 <h2 class="text-lg font-semibold">Fatture recenti</h2>
                                 <p class="text-sm text-slate-500">Scarica le tue fatture in PDF</p>
                             </div>
-                            <a href="#" class="text-sm text-slate-500 hover:text-slate-700">Archivio</a>
+                            <a href="fatture.php" class="text-sm text-slate-500 hover:text-slate-700">Archivio</a>
                         </div>
                         <div class="mt-4 overflow-x-auto">
                             <table class="min-w-full text-sm">
