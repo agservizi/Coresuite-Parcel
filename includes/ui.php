@@ -74,7 +74,15 @@ function render_topbar(string $title, string $subtitle = ''): void
                     <?php endif; ?>
                 </div>
             </div>
-            <button type="button" data-theme-toggle class="btn-primary">Tema</button>
+            <button type="button" data-theme-toggle class="btn-icon" aria-label="Cambia tema">
+                <span class="sr-only">Cambia tema</span>
+                <svg data-theme-icon="light" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m0 10.728 1.414-1.414m10.728-10.728-1.414 1.414M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg data-theme-icon="dark" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
+                </svg>
+            </button>
         </div>
     </header>
     <?php
